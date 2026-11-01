@@ -111,10 +111,6 @@ if [[ "$UNATTENDED" != "true" && -t 0 ]]; then
   printf "\n"
 fi
 
-# Clean up legacy packages or desktop files if present
-sudo rm -f /usr/share/applications/ryoport.desktop /usr/share/applications/ryovm.desktop 2>/dev/null || true
-rm -f "$HOME/.local/share/applications/ryoport.desktop" "$HOME/.local/share/applications/ryovm.desktop" 2>/dev/null || true
-
 # Locate or fetch source tree
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || true)"
 TEMP_DIR=""
