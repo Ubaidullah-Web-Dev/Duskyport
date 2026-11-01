@@ -20,7 +20,12 @@
 Run this single command in your terminal to automatically install Duskyport and configure all dependencies:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Ubaidullah-Web-Dev/duskyport/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Ubaidullah-Web-Dev/Duskyport/main/install.sh | bash
+```
+
+To uninstall at any time:
+```bash
+curl -sSL https://raw.githubusercontent.com/Ubaidullah-Web-Dev/Duskyport/main/install.sh | bash -s -- --uninstall
 ```
 
 </div>
@@ -71,7 +76,12 @@ The primary interface is written in pure **Quickshell / QML**, connected to fast
 ### 1. Automatic One-Line Install (Recommended)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Ubaidullah-Web-Dev/duskyport/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Ubaidullah-Web-Dev/Duskyport/main/install.sh | bash
+```
+
+To uninstall at any time:
+```bash
+curl -sSL https://raw.githubusercontent.com/Ubaidullah-Web-Dev/Duskyport/main/install.sh | bash -s -- --uninstall
 ```
 
 The interactive installer will:

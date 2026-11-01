@@ -11,9 +11,12 @@
 #
 #  Options:
 #    -y, --yes, --unattended   Non-interactive mode (use default options)
-#    --no-extras               Skip installing optional VM tools (quickemu, looking-glass, etc.)
+#    --no-extras               Skip installing optional VM tools (quickemu, picocom, etc.)
 #    --no-matugen              Skip configuring Matugen theming
 #    --no-rules                Skip configuring Hyprland window rules
+#    -u, --uninstall           Uninstall Duskyport and revert configurations
+#    --remove-deps             During uninstall, also remove optional VM dependencies
+#    --purge                   During uninstall, also remove user configs and data
 # ==============================================================================
 set -euo pipefail
 # shellcheck disable=SC2059
@@ -32,13 +35,29 @@ log_warn()  { printf "${YELLOW}  !${RESET} %s\n" "$1"; }
 log_err()   { printf "${RED}  ✗${RESET} %s\n" "$1" >&2; }
 
 # Parse arguments
+MODE="install"
 UNATTENDED=false
 INSTALL_EXTRAS=true
 CONFIG_MATUGEN=true
 CONFIG_RULES=true
+PURGE=false
+REMOVE_DEPS=false
 
 for arg in "$@"; do
   case "$arg" in
+    -u|--uninstall)
+      MODE="uninstall"
+      ;;
+    --purge)
+      PURGE=true
+      REMOVE_DEPS=true
+      ;;
+    --remove-deps)
+      REMOVE_DEPS=true
+      ;;
+    --keep-deps)
+      REMOVE_DEPS=false
+      ;;
     -y|--yes|--unattended)
       UNATTENDED=true
       ;;
@@ -52,11 +71,205 @@ for arg in "$@"; do
       CONFIG_RULES=false
       ;;
     -h|--help)
-      echo "Usage: $0 [-y|--yes] [--no-extras] [--no-matugen] [--no-rules]"
+      echo "Usage: $0 [options]"
+      echo ""
+      echo "Installation Options:"
+      echo "  -y, --yes, --unattended   Non-interactive mode (use default options)"
+      echo "  --no-extras               Skip installing optional VM tools (quickemu, picocom, etc.)"
+      echo "  --no-matugen              Skip configuring Matugen theming"
+      echo "  --no-rules                Skip configuring Hyprland window rules"
+      echo ""
+      echo "Uninstallation Options:"
+      echo "  -u, --uninstall           Safely uninstall Duskyport and revert configurations"
+      echo "  --remove-deps             Also uninstall optional VM tools (quickemu, spice-gtk, etc.)"
+      echo "  --purge                   Remove user data (~/.config/duskyport) and optional deps"
       exit 0
       ;;
   esac
 done
+
+do_uninstall() {
+  printf "\n"
+  printf "${RED}${BOLD}======================================================${RESET}\n"
+  printf "${RED}${BOLD}  Duskyport Uninstaller${RESET}\n"
+  printf "${RED}${BOLD}======================================================${RESET}\n\n"
+
+  local rm_matugen=true
+  local rm_rules=true
+  local rm_user_data="$PURGE"
+  local rm_deps="$REMOVE_DEPS"
+
+  if [[ "$UNATTENDED" != "true" && -t 0 ]]; then
+    printf "${BOLD}Uninstallation Options:${RESET}\n"
+
+    read -r -p "  Revert Matugen theming configuration (~/.config/matugen/config.toml)? [Y/n] " ans_mat
+    ans_mat="${ans_mat:-y}"
+    [[ "$ans_mat" =~ ^[Yy]$ ]] || rm_matugen=false
+
+    read -r -p "  Revert Dusky/Hyprland window rules (~/.config/hypr/user.lua)? [Y/n] " ans_rul
+    ans_rul="${ans_rul:-y}"
+    [[ "$ans_rul" =~ ^[Yy]$ ]] || rm_rules=false
+
+    read -r -p "  Remove Duskyport user configs and cached skins (~/.config/duskyport)? [y/N] " ans_cfg
+    ans_cfg="${ans_cfg:-n}"
+    [[ "$ans_cfg" =~ ^[Yy]$ ]] && rm_user_data=true
+
+    read -r -p "  Uninstall optional VM & console packages (quickemu, spice-gtk, etc.)? [y/N] " ans_dp
+    ans_dp="${ans_dp:-n}"
+    [[ "$ans_dp" =~ ^[Yy]$ ]] && rm_deps=true
+
+    printf "\n"
+  fi
+
+  # 1. Remove Binaries
+  log_info "Removing Duskyport binaries from /usr/bin..."
+  sudo rm -f \
+    /usr/bin/duskyport \
+    /usr/bin/duskyvm \
+    /usr/bin/duskyport-fetch \
+    /usr/bin/duskyport-mon \
+    /usr/bin/duskyssh \
+    /usr/bin/duskyport-ssh \
+    /usr/bin/duskyport-gpuvm \
+    /usr/bin/duskyport-qml
+  log_ok "Binaries removed."
+
+  # 2. Remove Application Data
+  log_info "Removing Duskyport application data..."
+  sudo rm -rf "/usr/share/duskyport"
+  sudo rm -rf "/usr/share/quickshell/duskyport"
+
+  if command -v duskytunes >/dev/null 2>&1; then
+    log_info "Preserving Dusky.Ui runtime (required by Duskytunes)."
+  else
+    sudo rm -rf "/usr/lib/qt6/qml/Dusky/Ui"
+    rm -rf "$HOME/.local/lib/qt6/qml/Dusky/Ui"
+    rm -rf "$HOME/.local/share/quickshell/Dusky/Ui"
+    log_ok "Dusky design runtime removed."
+  fi
+  log_ok "Application data removed."
+
+  # 3. Remove Desktop Entries and Icons
+  log_info "Removing desktop entries and icons..."
+  sudo rm -f "/usr/share/applications/duskyport.desktop"
+  rm -f "$HOME/.local/share/applications/duskyport.desktop"
+  for s in 16 32 48 64 128 256 512; do
+    sudo rm -f "/usr/share/icons/hicolor/${s}x${s}/apps/duskyport.png"
+  done
+  sudo rm -f "/usr/share/icons/hicolor/scalable/apps/duskyport.svg"
+  sudo gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor 2>/dev/null || true
+  sudo update-desktop-database -q /usr/share/applications 2>/dev/null || true
+  update-desktop-database -q "$HOME/.local/share/applications" 2>/dev/null || true
+  log_ok "Desktop launchers and icons removed."
+
+  # 4. Safely Revert Matugen
+  if [[ "$rm_matugen" == "true" ]]; then
+    log_info "Safely reverting Matugen template registration..."
+    local mat_conf="$HOME/.config/matugen/config.toml"
+    if [[ -f "$mat_conf" ]]; then
+      cp -a "$mat_conf" "$mat_conf.bak.$(date +%Y%m%d%H%M%S)"
+      python3 - "$mat_conf" << 'PY'
+import sys
+from pathlib import Path
+p = Path(sys.argv[1])
+if not p.exists():
+    sys.exit(0)
+lines = p.read_text().splitlines(keepends=True)
+out = []
+in_target = False
+for line in lines:
+    stripped = line.strip()
+    if stripped == "[templates.duskyport]":
+        in_target = True
+        continue
+    if in_target:
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_target = False
+            out.append(line)
+        else:
+            continue
+    else:
+        out.append(line)
+p.write_text("".join(out).rstrip() + "\n")
+PY
+      log_ok "Reverted [templates.duskyport] in ~/.config/matugen/config.toml (backup created)."
+    fi
+    rm -f "$HOME/.config/matugen/templates/duskyport.json"
+    rm -rf "$HOME/.config/duskyport/skins/matugen"
+  fi
+
+  # 5. Revert Hyprland Window Rules
+  if [[ "$rm_rules" == "true" ]]; then
+    log_info "Reverting Dusky/Hyprland window rules..."
+    local hypr_lua="$HOME/.config/hypr/user.lua"
+    if [[ -f "$hypr_lua" ]]; then
+      python3 - "$hypr_lua" << 'PY'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+if not p.exists():
+    sys.exit(0)
+begin = '-- BEGIN DUSKYPORT MANAGED WINDOW RULE'
+end = '-- END DUSKYPORT MANAGED WINDOW RULE'
+s = p.read_text()
+while begin in s:
+    a = s.index(begin)
+    b = s.find(end, a)
+    if b < 0:
+        s = s[:a]
+        break
+    b += len(end)
+    if b < len(s) and s[b:b+1] == '\n': b += 1
+    s = s[:a] + s[b:]
+p.write_text(s.rstrip() + ('\n' if s.strip() else ''))
+PY
+      command -v hyprctl >/dev/null 2>&1 && hyprctl reload >/dev/null 2>&1 || true
+      log_ok "Hyprland window rules removed."
+    fi
+  fi
+
+  # 6. User Config and State
+  if [[ "$rm_user_data" == "true" ]]; then
+    log_info "Purging user data in ~/.config/duskyport and ~/.local/share/duskyport..."
+    rm -rf "$HOME/.config/duskyport"
+    rm -rf "$HOME/.local/share/duskyport"
+    rm -rf "$HOME/.cache/duskyport"
+    log_ok "User data purged."
+  else
+    log_info "Preserving user configuration in ~/.config/duskyport (use --purge to delete)."
+  fi
+
+  # 7. Optional Dependency Removal
+  if [[ "$rm_deps" == "true" ]]; then
+    log_info "Checking optional dependencies for safe removal..."
+    local candidates=(quickemu spice-gtk libisoburn picocom inetutils freerdp tigervnc)
+    for pkg in "${candidates[@]}"; do
+      if pacman -Qi "$pkg" >/dev/null 2>&1; then
+        local count=0
+        if command -v pactree >/dev/null 2>&1; then
+          count=$(pactree -r "$pkg" 2>/dev/null | wc -l || echo 0)
+        fi
+        if [[ "$count" -le 1 ]]; then
+          log_info "Removing unused dependency: $pkg..."
+          sudo pacman -R --noconfirm "$pkg" 2>/dev/null || true
+        else
+          log_warn "Skipping $pkg: required by another installed package."
+        fi
+      fi
+    done
+    log_ok "Optional dependencies cleaned."
+  fi
+
+  printf "\n"
+  printf "${GREEN}${BOLD}======================================================${RESET}\n"
+  printf "${GREEN}${BOLD}  Duskyport has been successfully uninstalled!${RESET}\n"
+  printf "${GREEN}${BOLD}======================================================${RESET}\n\n"
+  exit 0
+}
+
+if [[ "$MODE" == "uninstall" ]]; then
+  do_uninstall
+fi
 
 printf "\n"
 printf "${CYAN}${BOLD}"

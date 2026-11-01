@@ -70,6 +70,32 @@ makepkg -si
 
 ---
 
+## 🗑️ Uninstallation
+
+Duskyport includes a clean and safe uninstallation mode:
+
+```bash
+# Interactive uninstaller
+./install.sh --uninstall
+# or directly via curl:
+curl -sSL https://raw.githubusercontent.com/Ubaidullah-Web-Dev/Duskyport/main/install.sh | bash -s -- --uninstall
+
+# Non-interactive uninstall (removes binaries, desktop entries, reverts matugen & window rules)
+./install.sh --uninstall -y
+
+# Full purge (also cleans ~/.config/duskyport and optional dependencies)
+./install.sh --uninstall -y --purge
+```
+
+The uninstaller:
+- Removes all binaries and desktop launchers from `/usr/bin/` and `/usr/share/`.
+- Preserves shared components (`Dusky.Ui`) if Duskytunes is installed.
+- Safely strips the `[templates.duskyport]` block from `~/.config/matugen/config.toml` without touching any of your other themes or configs.
+- Reverts the Hyprland floating window rule from `~/.config/hypr/user.lua` and reloads `hyprctl`.
+- Optionally cleans up unused VM dependencies if confirmed.
+
+---
+
 ## 🧪 Verification
 
 After installation, verify that Duskyport's CLI and hypervisor engines are ready:

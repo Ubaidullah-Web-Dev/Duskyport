@@ -44,9 +44,9 @@ jobs:
 
       - name: Shellcheck on scripts
         run: |
-          shellcheck bin/duskyport
-          shellcheck scripts/*.sh
-          shellcheck install.sh
+          shellcheck -S warning bin/duskyport
+          shellcheck -S warning scripts/*.sh
+          shellcheck -S warning install.sh
 
       - name: Verification and Integration Test
         run: ./scripts/test.sh

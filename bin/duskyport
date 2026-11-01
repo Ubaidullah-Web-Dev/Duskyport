@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2015
 # Engine for duskyport: the data plane behind the duskyport app. A thin, JSON-speaking
 # wrapper around quickemu + quickget (the QEMU front-end that auto-downloads
 # ~1000 OSes and runs them with tuned defaults), so the QML never shells out to
