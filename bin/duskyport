@@ -175,16 +175,29 @@ cmd_caps() {
 
 # ---- setup -----------------------------------------------------------------
 cmd_setup() {
-	have dusky-host || die "dusky-host is required to install VM dependencies"
-	dusky-pkg-add --needed spice-gtk libisoburn
-	if ! dusky-pkg-aur-add quickemu; then
-		local why
-		why="$(dusky-host pkg why quickemu 2>/dev/null || true)"
-		[ -n "$why" ] || why="quickemu is not available from the system package sources"
-		die "$why"
+	echo "==> Setting up Duskyport VM engine (quickemu, spice-gtk, libisoburn)..."
+	if command -v pacman >/dev/null 2>&1; then
+		sudo pacman -S --needed --noconfirm spice-gtk libisoburn qemu-desktop cdrtools zsync
+		if ! command -v quickemu >/dev/null 2>&1; then
+			if command -v yay >/dev/null 2>&1; then
+				echo "Installing quickemu from AUR via yay..."
+				yay -S --needed --noconfirm quickemu
+			elif command -v paru >/dev/null 2>&1; then
+				echo "Installing quickemu from AUR via paru..."
+				paru -S --needed --noconfirm quickemu
+			else
+				echo "Neither yay nor paru found. Please install quickemu manually."
+			fi
+		fi
+	elif command -v apt-get >/dev/null 2>&1; then
+		sudo apt-get update && sudo apt-get install -y quickemu spice-client-gtk libisoburn
+	elif command -v dnf >/dev/null 2>&1; then
+		sudo dnf install -y quickemu spice-gtk libisoburn
+	else
+		die "Unsupported package manager. Please install quickemu and spice-gtk manually."
 	fi
-	have quickemu || die "the install finished but quickemu is still missing; see the output above"
-	echo "Done — quickemu is installed. Close this window; duskyport lights up in a few seconds."
+	have quickemu || die "The install finished but quickemu is still missing. Please install it manually."
+	echo "Done — quickemu is installed! Close this window; Duskyport will refresh in a few seconds."
 }
 
 # ---- catalog ---------------------------------------------------------------

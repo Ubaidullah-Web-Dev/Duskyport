@@ -87,7 +87,7 @@ fi
 if [[ "$UNATTENDED" != "true" && -t 0 ]]; then
   printf "${BOLD}Installation Options:${RESET}\n"
   
-  read -r -p "  Install recommended VM, console & Looking Glass tools (quickemu, looking-glass, picocom, etc.)? [Y/n] " ans_extras
+  read -r -p "  Install recommended VM & console tools (quickemu, picocom, freerdp)? [Y/n] " ans_extras
   ans_extras="${ans_extras:-y}"
   if [[ ! "$ans_extras" =~ ^[Yy]$ ]]; then
     INSTALL_EXTRAS=false
@@ -146,22 +146,24 @@ if [[ "$INSTALL_EXTRAS" == "true" ]]; then
     spice-gtk \
     libisoburn \
     qemu-desktop \
+    cdrtools \
+    zsync \
     picocom \
     inetutils \
     freerdp \
     tigervnc 2>/dev/null || true
 
-  # Try to install quickemu and looking-glass via AUR helper if available
+  # Try to install quickemu via AUR helper if available
   if command -v yay >/dev/null 2>&1; then
-    log_info "Installing quickemu and looking-glass from AUR via yay..."
-    yay -S --needed --noconfirm quickemu looking-glass 2>/dev/null || log_warn "Could not install all AUR extras automatically."
+    log_info "Installing quickemu from AUR via yay..."
+    yay -S --needed --noconfirm quickemu 2>/dev/null || log_warn "Could not install quickemu via yay automatically."
   elif command -v paru >/dev/null 2>&1; then
-    log_info "Installing quickemu and looking-glass from AUR via paru..."
-    paru -S --needed --noconfirm quickemu looking-glass 2>/dev/null || log_warn "Could not install all AUR extras automatically."
+    log_info "Installing quickemu from AUR via paru..."
+    paru -S --needed --noconfirm quickemu 2>/dev/null || log_warn "Could not install quickemu via paru automatically."
   else
-    log_warn "No AUR helper (yay/paru) detected. Install 'quickemu' and 'looking-glass' manually from AUR if needed."
+    log_warn "No AUR helper (yay/paru) detected. Install 'quickemu' manually to download automated OS images."
   fi
-  log_ok "VM, Looking Glass, and console tools installed."
+  log_ok "VM and console tools installed."
 fi
 
 # Step 3: Install QML design runtime (Dusky.Ui / Singletons)

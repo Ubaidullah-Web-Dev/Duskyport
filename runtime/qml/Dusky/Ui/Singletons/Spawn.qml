@@ -34,14 +34,6 @@ Singleton {
         if (!argv || argv.length === 0)
             return;
         const options = opts || {};
-        const command = ["dusky-host", "app"];
-        if (options.cwd)
-            command.push("--cwd", String(options.cwd));
-        if (options.label)
-            command.push("--label", String(options.label));
-        command.push("--");
-        for (let i = 0; i < argv.length; i++)
-            command.push(String(argv[i]));
-        spawn.run(command);
+        spawn.run(argv, options.cwd);
     }
 }
