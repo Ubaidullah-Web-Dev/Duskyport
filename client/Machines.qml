@@ -74,10 +74,10 @@ Item {
 
     // deep-link start mode, and an optional OS to preselect once it lands.
     Component.onCompleted: {
-        var m = Quickshell.env("RYOVM_START_MODE");
+        var m = Quickshell.env("DUSKYPORT_START_MODE");
         if (m === "catalog" || m === "instant") { mach.mode = "new"; mach.channel = m; }
     }
-    readonly property string startOs: Quickshell.env("RYOVM_START_OS") || ""
+    readonly property string startOs: Quickshell.env("DUSKYPORT_START_OS") || ""
     Connections {
         target: Vm
         function onCreated(name) { mach.mode = "library"; }

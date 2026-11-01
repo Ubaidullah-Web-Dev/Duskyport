@@ -81,7 +81,7 @@ Rectangle {
     Component.onCompleted: {
         var s = Quickshell.env("DUSKYPORT_SECTION");
         if (s === "dashboard" || s === "machines" || s === "remotes" || s === "passthrough" || s === "consoles") app.section = s;
-        var m = Quickshell.env("RYOVM_START_MODE");
+        var m = Quickshell.env("DUSKYPORT_START_MODE");
         if (m === "catalog" || m === "instant") app.section = "machines";
         app.refocus();
     }

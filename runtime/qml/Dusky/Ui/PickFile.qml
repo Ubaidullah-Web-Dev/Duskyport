@@ -18,7 +18,7 @@ Item {
     property bool active: false
     property bool foldersOnly: false
     // override the image glob for non-image pickers (e.g. ["*.svg"], ["*.txt"],
-    // ["*.ryoprofile"]); empty keeps the default image set (png/jpg/webp/gif/svg).
+    // ["*.duskyprofile"]); empty keeps the default image set (png/jpg/webp/gif/svg).
     property var fileFilters: []
     property string title: I18n.tr("Choose a file")
     property string emptyText: ""
@@ -162,7 +162,7 @@ Item {
                             font.pixelSize: Tokens.fTiny
                         }
                     }
-                    // a non-image file (an ascii art, a .ryoprofile): a doc tile
+                    // a non-image file (an ascii art, a .duskyprofile): a doc tile
                     // rather than a broken thumbnail, so PickFile serves every
                     // pick coherently, not just images.
                     Column {
