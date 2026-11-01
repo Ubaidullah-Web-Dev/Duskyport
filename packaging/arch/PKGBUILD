@@ -1,0 +1,78 @@
+# Maintainer: Ubaid <https://github.com/Ubaidullah-Web-Dev/duskyport>
+pkgname=duskyport
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Fleet Dashboard & Virtual Machine Manager for Dusky OS & Arch Linux"
+arch=('x86_64')
+url="https://github.com/Ubaidullah-Web-Dev/duskyport"
+license=('GPL-3.0-or-later')
+depends=(
+  'quickshell'
+  'openssl'
+  'librsvg'
+  'desktop-file-utils'
+  'hicolor-icon-theme'
+  'xdg-utils'
+  'polkit'
+  'jq'
+)
+optdepends=(
+  'quickemu: build and run virtual machines with auto-downloads'
+  'libisoburn: instant cloud machines in duskyport (xorriso)'
+  'spice-gtk: SPICE console and guest display viewer'
+  'looking-glass: low-latency GPU passthrough VM display'
+  'picocom: serial console berths in duskyport'
+  'inetutils: telnet berths in duskyport'
+  'freerdp: RDP berths in duskyport'
+  'tigervnc: VNC berths in duskyport'
+  'matugen: dynamic Material 3 wallpaper-based theming'
+)
+makedepends=('go')
+
+build() {
+  cd "$srcdir/$pkgname"
+  go build -ldflags="-s -w" -o bin/x86_64/duskyport-fetch ./cmd/duskyport-fetch
+  go build -ldflags="-s -w" -o bin/x86_64/duskyport-mon ./cmd/duskyport-mon
+  go build -ldflags="-s -w" -o bin/x86_64/duskyssh ./cmd/duskyssh
+  go build -ldflags="-s -w" -o bin/x86_64/duskyport-gpuvm ./cmd/duskyport-gpuvm
+}
+
+package() {
+  cd "$srcdir/$pkgname"
+
+  # Binaries
+  install -Dm755 bin/duskyport "$pkgdir/usr/bin/duskyport"
+  ln -sf /usr/bin/duskyport "$pkgdir/usr/bin/duskyvm"
+  install -Dm755 bin/x86_64/duskyport-fetch "$pkgdir/usr/bin/duskyport-fetch"
+  install -Dm755 bin/x86_64/duskyport-mon "$pkgdir/usr/bin/duskyport-mon"
+  install -Dm755 bin/x86_64/duskyssh "$pkgdir/usr/bin/duskyssh"
+  ln -sf /usr/bin/duskyssh "$pkgdir/usr/bin/duskyport-ssh"
+  install -Dm755 bin/x86_64/duskyport-gpuvm "$pkgdir/usr/bin/duskyport-gpuvm"
+  install -Dm755 packaging/linux/duskyport-qml "$pkgdir/usr/bin/duskyport-qml"
+
+  # Client UI
+  install -dm755 "$pkgdir/usr/share/duskyport/client"
+  cp -r client/. "$pkgdir/usr/share/duskyport/client/"
+
+  # Quickshell config registration
+  install -dm755 "$pkgdir/usr/share/quickshell/duskyport"
+  cp -r client/. "$pkgdir/usr/share/quickshell/duskyport/"
+
+  # QML Design Runtime
+  install -dm755 "$pkgdir/usr/lib/qt6/qml/Dusky/Ui"
+  cp -r runtime/qml/Dusky/Ui/. "$pkgdir/usr/lib/qt6/qml/Dusky/Ui/"
+  install -dm755 "$pkgdir/usr/share/duskyport/qml/Dusky/Ui"
+  cp -r runtime/qml/Dusky/Ui/. "$pkgdir/usr/share/duskyport/qml/Dusky/Ui/"
+
+  # Matugen template
+  install -Dm644 matugen/duskyport.json "$pkgdir/usr/share/duskyport/matugen/duskyport.json"
+
+  # Desktop Entry & Icons
+  install -Dm644 packaging/linux/duskyport.desktop "$pkgdir/usr/share/applications/duskyport.desktop"
+  for s in 16 32 48 64 128 256 512; do
+    if [ -f "packaging/linux/icons/${s}x${s}/apps/duskyport.png" ]; then
+      install -Dm644 "packaging/linux/icons/${s}x${s}/apps/duskyport.png" "$pkgdir/usr/share/icons/hicolor/${s}x${s}/apps/duskyport.png"
+    fi
+  done
+  install -Dm644 packaging/linux/icons/scalable/apps/duskyport.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/duskyport.svg"
+}

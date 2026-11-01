@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Duskyport
+GenericName=Fleet Dashboard
+Comment=Monitor and operate virtual machines, remote servers and SSH connections
+Exec=duskyport
+Icon=duskyport
+Terminal=false
+Categories=System;Utility;
+Keywords=vm;virtual machine;qemu;quickemu;vps;ssh;remote;server;terminal;putty;hub;passthrough;looking-glass;

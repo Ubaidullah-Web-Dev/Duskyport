@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          check-latest: true
+
+      - name: Install system test tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-utils libvirt-clients shellcheck
+
+      - name: Go Vet
+        run: go vet ./...
+
+      - name: Go Unit Tests
+        run: go test -v -race ./...
+
+      - name: Build Binaries
+        run: |
+          mkdir -p bin/x86_64
+          go build -v -ldflags="-s -w" -o bin/x86_64/duskyport-fetch ./cmd/duskyport-fetch
+          go build -v -ldflags="-s -w" -o bin/x86_64/duskyport-mon ./cmd/duskyport-mon
+          go build -v -ldflags="-s -w" -o bin/x86_64/duskyssh ./cmd/duskyssh
+          go build -v -ldflags="-s -w" -o bin/x86_64/duskyport-gpuvm ./cmd/duskyport-gpuvm
+
+      - name: Shellcheck on scripts
+        run: |
+          shellcheck bin/duskyport
+          shellcheck scripts/*.sh
+          shellcheck install.sh
+
+      - name: Verification and Integration Test
+        run: ./scripts/test.sh

@@ -1,0 +1,22 @@
+# Release archives & packages
+dist/
+*.tar.gz
+*.tar.zst
+*.pkg.tar.zst
+*.sha256
+
+# Temporary & runtime files
+*.tmp
+*.bak
+.duskyssh-*
+/tmp/duskyport.lock
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,5 @@
+#!/bin/sh
+# Duskyport native (QML) client launcher.
+CLIENT_DIR="/usr/share/duskyport/client"
+export QML_IMPORT_PATH="/usr/share/duskyport/qml:${HOME}/.local/share/quickshell:${HOME}/.local/lib/qt6/qml:/usr/lib/qt6/qml:${QML_IMPORT_PATH:-}"
+exec qs -p "$CLIENT_DIR" "$@"
