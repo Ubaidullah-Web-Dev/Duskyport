@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a defect or crash in Duskyport
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue with Duskyport!
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Run `duskyport ...`
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS version, Compositor (Hyprland/Sway), Quickshell version, GPU model.
+      placeholder: Arch Linux / Hyprland / Quickshell 0.0.1+ / AMD Radeon RX 6800 XT
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Terminal / Log Output
+      description: Please copy and paste any relevant terminal output or log entries.
+      render: shell

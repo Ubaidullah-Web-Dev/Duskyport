@@ -87,7 +87,7 @@ fi
 if [[ "$UNATTENDED" != "true" && -t 0 ]]; then
   printf "${BOLD}Installation Options:${RESET}\n"
   
-  read -r -p "  Install recommended VM & console tools (spice-gtk, libisoburn, picocom, freerdp)? [Y/n] " ans_extras
+  read -r -p "  Install recommended VM, console & Looking Glass tools (quickemu, looking-glass, picocom, etc.)? [Y/n] " ans_extras
   ans_extras="${ans_extras:-y}"
   if [[ ! "$ans_extras" =~ ^[Yy]$ ]]; then
     INSTALL_EXTRAS=false
@@ -121,7 +121,7 @@ else
   log_info "Downloading Duskyport source files from GitHub..."
   TEMP_DIR="$(mktemp -d /tmp/duskyport-install-XXXXXX)"
   trap 'rm -rf "$TEMP_DIR"' EXIT
-  git clone --depth 1 https://github.com/Ubaidullah-Web-Dev/duskyport.git "$TEMP_DIR"
+  git clone --depth 1 https://github.com/Ubaidullah-Web-Dev/Duskyport.git "$TEMP_DIR"
   SRC_ROOT="$TEMP_DIR"
 fi
 
@@ -129,6 +129,7 @@ fi
 log_info "Installing core dependencies via pacman..."
 sudo pacman -S --needed --noconfirm \
   quickshell \
+  matugen \
   openssl \
   librsvg \
   desktop-file-utils \
@@ -150,17 +151,17 @@ if [[ "$INSTALL_EXTRAS" == "true" ]]; then
     freerdp \
     tigervnc 2>/dev/null || true
 
-  # Try to install quickemu via AUR helper if available
+  # Try to install quickemu and looking-glass via AUR helper if available
   if command -v yay >/dev/null 2>&1; then
-    log_info "Installing quickemu from AUR via yay..."
-    yay -S --needed --noconfirm quickemu 2>/dev/null || log_warn "Could not install quickemu via yay automatically."
+    log_info "Installing quickemu and looking-glass from AUR via yay..."
+    yay -S --needed --noconfirm quickemu looking-glass 2>/dev/null || log_warn "Could not install all AUR extras automatically."
   elif command -v paru >/dev/null 2>&1; then
-    log_info "Installing quickemu from AUR via paru..."
-    paru -S --needed --noconfirm quickemu 2>/dev/null || log_warn "Could not install quickemu via paru automatically."
+    log_info "Installing quickemu and looking-glass from AUR via paru..."
+    paru -S --needed --noconfirm quickemu looking-glass 2>/dev/null || log_warn "Could not install all AUR extras automatically."
   else
-    log_warn "No AUR helper (yay/paru) detected. Install 'quickemu' manually to download automated OS images."
+    log_warn "No AUR helper (yay/paru) detected. Install 'quickemu' and 'looking-glass' manually from AUR if needed."
   fi
-  log_ok "VM and console tools installed."
+  log_ok "VM, Looking Glass, and console tools installed."
 fi
 
 # Step 3: Install QML design runtime (Dusky.Ui / Singletons)
@@ -291,9 +292,21 @@ MATUGEN_EOF
       log_info "Generating initial Matugen skin from $WALLPAPER..."
       matugen --source-color-index 0 image "$WALLPAPER" >/dev/null 2>&1 || \
         matugen --prefer saturation image "$WALLPAPER" >/dev/null 2>&1 || true
-      if [[ -f "$DUSKYPORT_SKINS/skin.json" ]]; then
-        log_ok "Generated ~/.config/duskyport/skins/matugen/skin.json"
-      fi
+    fi
+
+    # Fallback to generating palette from signature slate color if wallpaper was not available
+    if [[ ! -f "$DUSKYPORT_SKINS/skin.json" ]]; then
+      log_info "Generating default Matugen theme from signature slate palette..."
+      matugen color hex '#2d3136' >/dev/null 2>&1 || true
+    fi
+
+    # Final fallback: copy shipped default skin.json if generation was skipped
+    if [[ ! -f "$DUSKYPORT_SKINS/skin.json" && -f "$SRC_ROOT/matugen/skin.json" ]]; then
+      cp "$SRC_ROOT/matugen/skin.json" "$DUSKYPORT_SKINS/skin.json"
+    fi
+
+    if [[ -f "$DUSKYPORT_SKINS/skin.json" ]]; then
+      log_ok "Matugen skin configured at ~/.config/duskyport/skins/matugen/skin.json"
     fi
   fi
 fi
